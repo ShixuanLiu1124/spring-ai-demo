@@ -6,6 +6,7 @@ import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
@@ -48,6 +49,11 @@ public class ChatClientService {
 
     private ChatClient deepseekChatClient;
 
+    private BeanOutputConverter<List<ActorFilms>> converter;
+
+    private Flux<String> flux;
+
+
     @PostConstruct
     public void init() {
         aliApi = baseOpenAiApi.mutate()
@@ -68,6 +74,15 @@ public class ChatClientService {
         qwenFlashChatClient = ChatClient.builder(qwenFlash).build();
 
         deepseekChatClient = ChatClient.builder(deepseek).build();
+
+        converter = new BeanOutputConverter<>(new ParameterizedTypeReference<>() {});
+
+        flux = qwenFlashChatClient.prompt().user(u -> u.text("""
+                    Generate the filmography for a random actor.
+                                           {format}
+                """).param("format", converter.getFormat()))
+                .stream()
+                .content();
     }
 
     public void multiClientFlow() {
@@ -85,24 +100,21 @@ public class ChatClientService {
     }
 
     public void entityTransfer() {
-        Flux<String> output = qwenFlashChatClient.prompt()
-                .user("Tell me a joke")
-                .stream()
-                .content();
-
-        output.subscribe(System.out::println);
-    }
-
-    public void streamingResponses() {
         try {
             List<ActorFilms> actorFilmList = qwenFlashChatClient.prompt()
                     .user("Generate the filmography of 5 movies for Tom Hanks and Bill Murray.")
                     .call()
-                    .entity(new ParameterizedTypeReference<>() {});
+                    .entity(new ParameterizedTypeReference<>(){});
 
             logger.info("actorFilmList: {}", actorFilmList);
         } catch (Exception e) {
             logger.error("Error in streaming responses", e);
         }
+    }
+
+    public void streamingResponses() {
+        String content = String.join("", flux.collectList().block());
+
+        List<ActorFilms> actorFilmList = converter.convert(content);
     }
 }
