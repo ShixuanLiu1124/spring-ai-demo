@@ -7,6 +7,7 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 /**
@@ -19,6 +20,12 @@ public class MultiModelService {
 
     private static final Logger logger = LoggerFactory.getLogger(MultiModelService.class);
 
+    @Value("${spring.ai.openai.api-key}")
+    private String apiKey;
+
+    @Value("${spring.ai.openai.base-url}")
+    private String baseUrl;
+
     @Resource
     private OpenAiChatModel baseChatModel;
 
@@ -28,37 +35,31 @@ public class MultiModelService {
     public void multiClientFlow() {
         try {
             // Derive a new OpenAiApi for Groq (Llama3)
-            OpenAiApi groqApi = baseOpenAiApi.mutate()
-                    .baseUrl("https://api.groq.com/openai")
-                    .apiKey(System.getenv("GROQ_API_KEY"))
-                    .build();
-
-            // Derive a new OpenAiApi for OpenAI GPT-4
-            OpenAiApi gpt4Api = baseOpenAiApi.mutate()
-                    .baseUrl("https://api.openai.com")
-                    .apiKey(System.getenv("OPENAI_API_KEY"))
+            OpenAiApi aliApi = baseOpenAiApi.mutate()
+                    .baseUrl(baseUrl)
+                    .apiKey(apiKey)
                     .build();
 
             // Derive a new OpenAiChatModel for Groq
-            OpenAiChatModel groqModel = baseChatModel.mutate()
-                    .openAiApi(groqApi)
-                    .defaultOptions(OpenAiChatOptions.builder().model("llama3-70b-8192").temperature(0.5).build())
+            OpenAiChatModel qwenFlash = baseChatModel.mutate()
+                    .openAiApi(aliApi)
+                    .defaultOptions(OpenAiChatOptions.builder().model("qwen-flash").temperature(0.5).build())
                     .build();
 
             // Derive a new OpenAiChatModel for GPT-4
-            OpenAiChatModel gpt4Model = baseChatModel.mutate()
-                    .openAiApi(gpt4Api)
-                    .defaultOptions(OpenAiChatOptions.builder().model("gpt-4").temperature(0.7).build())
+            OpenAiChatModel deepseek = baseChatModel.mutate()
+                    .openAiApi(aliApi)
+                    .defaultOptions(OpenAiChatOptions.builder().model("deepseek-v3.2-exp").temperature(0.7).build())
                     .build();
 
             // Simple prompt for both models
-            String prompt = "What is the capital of France?";
+            String prompt = "你是什么模型";
 
-            String groqResponse = ChatClient.builder(groqModel).build().prompt(prompt).call().content();
-            String gpt4Response = ChatClient.builder(gpt4Model).build().prompt(prompt).call().content();
+            String qwenFlashResponse = ChatClient.builder(qwenFlash).build().prompt(prompt).call().content();
+            String deepseekResponse = ChatClient.builder(deepseek).build().prompt(prompt).call().content();
 
-            logger.info("Groq (Llama3) response: {}", groqResponse);
-            logger.info("OpenAI GPT-4 response: {}", gpt4Response);
+            logger.info("qwen-flash: {}", qwenFlashResponse);
+            logger.info("deepseek: {}", deepseekResponse);
         }
         catch (Exception e) {
             logger.error("Error in multi-client flow", e);
