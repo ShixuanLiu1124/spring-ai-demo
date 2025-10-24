@@ -30,4 +30,9 @@ class ChatClientServiceTest {
     void streamingResponses() {
         chatClientService.streamingResponses();
     }
+
+    @Test
+    void promptTemplates() {
+        chatClientService.promptTemplates();
+    }
 }

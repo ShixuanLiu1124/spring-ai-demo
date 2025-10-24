@@ -10,6 +10,7 @@ import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
+import org.springframework.ai.template.st.StTemplateRenderer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -116,5 +117,24 @@ public class ChatClientService {
         String content = String.join("", flux.collectList().block());
 
         List<ActorFilms> actorFilmList = converter.convert(content);
+    }
+
+    public void promptTemplates() {
+        String answer = qwenFlashChatClient.prompt()
+                .user(u -> u
+                        .text("Tell me the names of 5 movies whose soundtrack was composed by {composer}")
+                        .param("composer", "John Williams"))
+                .call()
+                .content();
+        System.out.println("answer = " + answer);
+
+        String customAnswer = qwenFlashChatClient.prompt()
+                .user(u -> u
+                        .text("Tell me the names of 5 movies whose soundtrack was composed by <composer>")
+                        .param("composer", "John Williams"))
+                .templateRenderer(StTemplateRenderer.builder().startDelimiterToken('<').endDelimiterToken('>').build())
+                .call()
+                .content();
+        System.out.println("customAnswer = " + customAnswer);
     }
 }
