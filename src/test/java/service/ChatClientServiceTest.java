@@ -35,4 +35,9 @@ class ChatClientServiceTest {
     void promptTemplates() {
         chatClientService.promptTemplates();
     }
+
+    @Test
+    void advisorTest() {
+        chatClientService.advisorTest();
+    }
 }

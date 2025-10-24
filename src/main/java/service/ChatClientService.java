@@ -6,11 +6,17 @@ import jakarta.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.ai.template.st.StTemplateRenderer;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -53,6 +59,9 @@ public class ChatClientService {
     private BeanOutputConverter<List<ActorFilms>> converter;
 
     private Flux<String> flux;
+
+    @Resource
+    private ChatMemory chatMemory;
 
 
     @PostConstruct
@@ -136,5 +145,17 @@ public class ChatClientService {
                 .call()
                 .content();
         System.out.println("customAnswer = " + customAnswer);
+    }
+
+    public void advisorTest() {
+        String content = qwenFlashChatClient.prompt()
+                .advisors(
+                        MessageChatMemoryAdvisor.builder(chatMemory).build()
+                )
+                .user("Tell me the names of 5 movies whose soundtrack was composed by John Williams")
+                .call()
+                .content();
+
+        System.out.println("content = " + content);
     }
 }
