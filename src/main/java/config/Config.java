@@ -13,6 +13,10 @@ import org.springframework.context.annotation.Configuration;
 public class Config {
     @Bean
     public ChatClient chatClient(ChatClient.Builder builder) {
-        return builder.defaultSystem("你总是用鲁迅的风格回答").build();
+        // default system text
+//        return builder.defaultSystem("你总是用鲁迅的风格回答").build();
+
+        // default system text with parameters
+        return builder.defaultSystem("你总是用{character}的风格回答").build();
     }
 }

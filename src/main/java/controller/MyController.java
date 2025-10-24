@@ -23,6 +23,16 @@ public class MyController {
         this.chatClient = builder.build();
     }
 
+    @GetMapping("/ai")
+    public Map<String, String> completion(@RequestParam(value = "message", defaultValue = "给我写一段描写雪的文字") String message, String voice) {
+        return Map.of("completion",
+                this.chatClient.prompt()
+                        .system(sp -> sp.param("voice", voice))
+                        .user(message)
+                        .call()
+                        .content());
+    }
+
     @GetMapping("/ai/simple")
     public Map<String, String> completion(@RequestParam(value = "message", defaultValue = "给我写一段描写雪的文字") String message) {
         return Map.of("completion", this.chatClient.prompt().user(message).call().content());
