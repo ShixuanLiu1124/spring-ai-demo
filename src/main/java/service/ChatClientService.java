@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.PromptChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.converter.BeanOutputConverter;
@@ -62,6 +61,9 @@ public class ChatClientService {
 
     @Resource
     private ChatMemory chatMemory;
+
+    @Resource
+    private VectorStore vectorStore;
 
 
     @PostConstruct
@@ -150,7 +152,8 @@ public class ChatClientService {
     public void advisorTest() {
         String content = qwenFlashChatClient.prompt()
                 .advisors(
-                        MessageChatMemoryAdvisor.builder(chatMemory).build()
+                        MessageChatMemoryAdvisor.builder(chatMemory).build(),
+                        QuestionAnswerAdvisor.builder(vectorStore).build()
                 )
                 .user("Tell me the names of 5 movies whose soundtrack was composed by John Williams")
                 .call()
